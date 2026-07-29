@@ -1,4 +1,4 @@
-# PRAGMA for AML — brief report
+# PRAGMA for AML
 
 We adapt the PRAGMA foundation model (an encoder-only transformer pretrained with
 masked modelling on banking event sequences) to Anti-Money-Laundering detection on
