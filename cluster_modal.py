@@ -35,13 +35,16 @@ VOL_PATH = "/vol"
 def cluster_eval(
     scores_csv: str = "results/per_event_scores.csv",
     model: str = "graph",            # "graph" | "pragma"
-    threshold: float | None = None,   # None -> F0.5 threshold from results file
+    threshold: float | None = None,   # None -> {criterion}-optimal threshold from results file
+    criterion: str = "f2",           # which F-beta threshold to operate at: f2 | f1 | f0.5
     t_days: float = 30.0,             # T for the merge relation (match the label window)
 ):
     import csv
-    import os
+
+    import numpy as np
 
     from pragma.clustering import build_groups, match_penalty, guilty_events_from_rows
+    from pragma.metrics import best_fbeta
 
     T = t_days * 24 * 3600.0
     score_col = f"score_{model}"
@@ -51,14 +54,15 @@ def cluster_eval(
         rows = list(csv.DictReader(f))
     print(f"[scores] {len(rows)} test rows; column={score_col}")
 
+    # Compute the operating threshold directly from these scores (self-contained;
+    # independent of any stale results file). Default criterion = F2 (recall-leaning:
+    # for fraud we prefer catching launderers over avoiding false alarms).
     if threshold is None:
-        res_path = f"{VOL_PATH}/results/{'graph_results.txt' if model=='graph' else 'baseline_results.txt'}"
-        threshold = 0.5
-        if os.path.exists(res_path):
-            for line in open(res_path):
-                if line.startswith("f0.5_threshold:"):
-                    threshold = float(line.split(":", 1)[1])
-        print(f"[threshold] F0.5 threshold = {threshold:.4f}")
+        beta = {"f2": 2.0, "f1": 1.0, "f0.5": 0.5}[criterion]
+        s = np.array([float(r[score_col]) for r in rows])
+        y = np.array([int(r["label"]) for r in rows])
+        _, threshold = best_fbeta(s, y, beta)
+        print(f"[threshold] {criterion}-optimal threshold = {threshold:.4f}")
     else:
         print(f"[threshold] provided = {threshold:.4f}")
 
@@ -89,7 +93,7 @@ def cluster_eval(
 
 
 @app.local_entrypoint()
-def main(model: str = "graph", t_days: float = 30.0, threshold: float = -1.0):
+def main(model: str = "graph", criterion: str = "f2", t_days: float = 30.0, threshold: float = -1.0):
     thr = None if threshold < 0 else threshold
-    res = cluster_eval.remote(model=model, t_days=t_days, threshold=thr)
+    res = cluster_eval.remote(model=model, criterion=criterion, t_days=t_days, threshold=thr)
     print("[result]", res)

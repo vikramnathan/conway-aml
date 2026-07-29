@@ -69,8 +69,8 @@ the group of accounts collaborating in one laundering episode. We reconstruct ca
 from event-level flags via a transitive closure.
 
 - **Guilty events.** Predicted-guilty = model score >= threshold (each model's
-  F0.5-optimal threshold); ground-truth-guilty = actual label == 1. Predicted and
-  ground-truth groups are built independently by the same procedure.
+  F2-optimal threshold, recall-leaning); ground-truth-guilty = actual label == 1.
+  Predicted and ground-truth groups are built independently by the same procedure.
 - **Merge relation.** A guilty event `(n, t)` (node `n`, time `t`) links to a guilty
   event `(m, t')` when `m` is the counterparty of `n`'s guilty transaction **and**
   `|t - t'| < T`. Vertices are individual guilty *events*.
@@ -99,59 +99,65 @@ All numbers on the 95,705 held-out test events (per-event) / their induced group
 
 ### Per-event classification (steps 1 & 2)
 
+We report **F2 as the primary metric**: in AML a missed launderer is far costlier
+than a false alarm, so the operating point should prioritise recall. (The PRAGMA
+paper reports F0.5, which emphasises precision; we deliberately depart from that
+because the operational objective here is catching fraud.) F1 / F0.5 shown for
+reference; PR-AUC and ROC-AUC are threshold-independent.
+
 | Metric | PRAGMA-only | PRAGMA + graph | Δ |
 |---|---|---|---|
-| F0.5 | 0.530 | **0.643** | +21% |
+| **F2** (primary) | 0.794 | **0.818** | +3% |
 | F1 | 0.621 | **0.688** | +11% |
+| F0.5 | 0.530 | **0.643** | +21% |
 | PR-AUC | 0.519 | **0.670** | +29% |
 | ROC-AUC | 0.709 | **0.821** | +16% |
 
-Graph topology features lift every metric substantially — a direct confirmation of
-the paper's §3.4.5 limitation: the relational signal PRAGMA cannot see in isolation
-is exactly what AML detection needs.
+Graph topology features lift every metric — a direct confirmation of the paper's
+§3.4.5 limitation: the relational signal PRAGMA cannot see in isolation is exactly
+what AML detection needs. The gap is largest on the precision-sensitive metrics
+(F0.5, PR-AUC): both models can be pushed to high recall, but the graph features
+sharply reduce the false-positive cost of doing so.
 
 ### Guilty-group clustering (step 3)
 
-Each model is thresholded at its **own** F0.5-optimal per-event cutoff — these are
-**intentionally different** (0.863 vs 0.909). We treat the two as independent
-detectors, each deployed at its own best operating point, which is how they would
-run in practice; we do not force a shared threshold.
+Each model is thresholded at its **own** F2-optimal per-event cutoff (recall-leaning,
+matching the fraud-catching objective) — these are **intentionally different**
+(0.639 vs 0.569). We treat the two as independent detectors, each deployed at its own
+best operating point, which is how they would run in practice; we do not force a
+shared threshold.
 
 | | PRAGMA-only | PRAGMA + graph |
 |---|---|---|
-| flag threshold (F0.5-optimal, per model) | 0.863 | 0.909 |
-| precision penalty (per predicted group) ↓ | 0.603 | **0.464** |
-| recall penalty (per GT group) ↓ | **0.273** | 0.391 |
-| combined ↓ | 0.491 | **0.431** |
-| predicted groups | 44,516 | 27,936 |
+| flag threshold (F2-optimal, per model) | 0.639 | 0.569 |
+| recall penalty (per GT group) ↓ | 0.024 | 0.043 |
+| precision penalty (per predicted group) ↓ | 0.645 | **0.603** |
+| combined ↓ | 0.483 | **0.440** |
+| predicted groups | 64,935 | 55,853 |
 | ground-truth groups | 22,918 | 22,918 |
-| predicted matched | 19,719 | 16,747 |
-| GT matched | 16,695 | 14,066 |
+| predicted matched | 24,615 | 23,100 |
+| GT matched | 22,511 | 22,297 |
 
-The +graph model produces markedly cleaner cases (precision penalty 0.46 vs 0.60):
-it raises fewer, more precise flags (27.9K vs 44.5K predicted groups), so its
-reconstructed cases align far better with the truth. PRAGMA-only over-flags —
-catching slightly more ground-truth groups (better recall penalty) at the cost of
-many spurious cases. On the combined penalty, +graph wins (0.431 vs 0.491).
-
-Because each detector sits at its own threshold, it operates at a different
-precision/recall point (PRAGMA-only flags ~55% more events), so the precision-vs-recall
-split partly reflects those operating points, not embedding quality alone. This is
-deliberate — we tune each model to its own optimum. The threshold-independent per-event
-metrics above (PR-AUC, ROC-AUC) already establish the quality gap unambiguously.
+At F2 both models recover almost every ground-truth group (recall penalty 0.02–0.04:
+22.3–22.5K of 22,918 GT groups matched), as intended — recall is the priority. The
+difference is in precision: the +graph model reaches that recall with fewer spurious
+cases (55.9K vs 64.9K predicted groups; precision penalty 0.603 vs 0.645), so its
+combined penalty is lower (0.440 vs 0.483). Graph features let you keep recall high
+without drowning investigators in false cases.
 
 ### Takeaways
 
 - PRAGMA embeddings transfer to AML as a genuinely useful representation
   (ROC-AUC 0.71 from a frozen linear probe, no leakage).
-- **Graph-topology features are the decisive ingredient**, adding 16–29% across
-  per-event metrics and yielding materially cleaner case clusters — consistent with
-  the paper's own finding that network/relational signal is PRAGMA's missing piece.
+- **Graph-topology features are the decisive ingredient**: +3–29% across per-event
+  metrics (largest on precision-sensitive ones) and, at matched high recall, cleaner
+  case clusters — consistent with the paper's finding that network/relational signal
+  is PRAGMA's missing piece.
 
 ### Caveats
 
 - PRAGMA-S at 17,600 MLM steps (not fully converged; not scaled to M/L).
-- Each model is clustered at its own F0.5-optimal threshold (0.863 vs 0.909) — by
-  design, since we compare two detectors each at its own best operating point. As a
-  result they sit at different precision/recall points; the threshold-independent
+- Each model is clustered at its own F2-optimal threshold (0.639 vs 0.569) — by
+  design, since we compare two detectors each at its own best operating point. They
+  therefore sit at different precision/recall points; the threshold-independent
   per-event metrics (PR-AUC, ROC-AUC) carry the unambiguous quality comparison.

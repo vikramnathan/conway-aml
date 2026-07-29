@@ -226,7 +226,7 @@ def run(
             scores = torch.sigmoid(clf(Xt[tem]).squeeze(-1)).cpu().numpy()
         labels = y[test_mask]
         m = all_metrics(scores, labels)
-        print(f"[{tag}] F0.5={m['f0.5']:.4f} F1={m['f1']:.4f} "
+        print(f"[{tag}] F2={m['f2']:.4f} F1={m['f1']:.4f} F0.5={m['f0.5']:.4f} "
               f"PR-AUC={m['pr_auc']:.4f} ROC-AUC={m['roc_auc']:.4f}")
         return m, scores, labels
 
@@ -245,8 +245,9 @@ def run(
                      f"W={w} head_epochs={head_epochs} seed={seed}\n")
             fs.write(f"selected_events={len(y)} pos={int(y.sum())} "
                      f"test_events={int(test_mask.sum())} test_pos={int(y[test_mask].sum())}\n\n")
-            for k in ["f0.5", "f1", "pr_auc", "roc_auc", "f0.5_threshold",
-                      "f1_threshold", "n", "n_pos", "pos_rate"]:
+            for k in ["f2", "f1", "f0.5", "pr_auc", "roc_auc",
+                      "f2_threshold", "f1_threshold", "f0.5_threshold",
+                      "n", "n_pos", "pos_rate"]:
                 fs.write(f"{k}: {m[k]}\n")
 
     write_summary(f"{res_dir}/baseline_results.txt",

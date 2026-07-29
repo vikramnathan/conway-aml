@@ -115,13 +115,15 @@ modal run matched_modal.py --sample
 ## Step 5 — guilty-group clustering (step 3 of the study)
 
 ```bash
-modal run cluster_modal.py --model graph  --t-days 30
-modal run cluster_modal.py --model pragma --t-days 30
+modal run cluster_modal.py --model graph  --criterion f2 --t-days 30
+modal run cluster_modal.py --model pragma --criterion f2 --t-days 30
 # writes /vol/results/cluster_results_{graph,pragma}.txt
 ```
 
-Uses each model's F0.5-optimal threshold from its results file (override with
-`--threshold`). `--t-days` is the merge window T.
+Flags events at each model's F2-optimal threshold (computed from the per-event
+scores; recall-leaning, since catching fraud matters more than avoiding false
+alarms). `--criterion f1|f0.5` switches the objective; `--threshold` overrides it
+outright. `--t-days` is the merge window T.
 
 ## Step 6 — pull results locally
 
@@ -142,7 +144,8 @@ done
 | `--w` | matched | positive-class loss weight (default 10) |
 | `--head-epochs` | matched | linear-probe epochs on cached embeddings |
 | `--model graph\|pragma` | cluster | which score column to cluster |
-| `--threshold` | cluster | flag threshold (default: F0.5-optimal) |
+| `--criterion f2\|f1\|f0.5` | cluster | F-beta objective for the flag threshold (default f2) |
+| `--threshold` | cluster | override the flag threshold outright |
 
 Determinism: the account split (seed 0), tokenizer fit, and graph event selection
 (crc32-based) are all reproducible, so re-runs land on the same train/test rows.

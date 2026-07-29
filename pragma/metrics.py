@@ -73,11 +73,13 @@ def best_fbeta(scores: np.ndarray, labels: np.ndarray, beta: float) -> tuple[flo
 def all_metrics(scores: np.ndarray, labels: np.ndarray) -> dict:
     f1, thr1 = best_fbeta(scores, labels, 1.0)
     f05, thr05 = best_fbeta(scores, labels, 0.5)
+    f2, thr2 = best_fbeta(scores, labels, 2.0)
     return {
         "roc_auc": roc_auc(scores, labels),
         "pr_auc": pr_auc(scores, labels),
         "f1": f1, "f1_threshold": thr1,
         "f0.5": f05, "f0.5_threshold": thr05,
+        "f2": f2, "f2_threshold": thr2,
         "n": int(len(labels)), "n_pos": int(labels.sum()),
         "pos_rate": float(labels.mean()) if len(labels) else float("nan"),
     }
