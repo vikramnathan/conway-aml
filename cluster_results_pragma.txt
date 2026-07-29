@@ -1,0 +1,9 @@
+Guilty-group clustering eval (model=pragma, T=30.0d, threshold=0.8631)
+
+precision_penalty: 0.6032009844021256
+recall_penalty: 0.2725506879599732
+combined_penalty: 0.4908267593248463
+n_pred_groups: 44516
+n_gt_groups: 22918
+n_pred_matched: 19719
+n_gt_matched: 16695

@@ -1,0 +1,30 @@
+# ---- Raw & generated data (large; rebuild via preprocess/build scripts) ----
+*.csv
+*.json
+*.zip
+*.parquet
+*.lmdb
+
+# ---- Model checkpoints ----
+*.pt
+*.ckpt
+checkpoints/
+
+# ---- Python env & caches ----
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ipynb_checkpoints/
+
+# ---- OS / editor cruft ----
+.DS_Store
+*.swp
+
+# ---- unrelated local utility (not part of this project) ----
+clean-downloads.sh
+
+# NOTE: results summaries are plain text and intentionally tracked:
+#   baseline_results.txt, graph_results.txt, cluster_results_*.txt
+# Reports (REPORT.md, README.md, RESULTS_SUMMARY.md) are tracked too.

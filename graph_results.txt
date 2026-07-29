@@ -1,0 +1,13 @@
+PRAGMA + graph-topology features AML (embedding probe)
+backbone_ckpt=pragma_S_latest.pt step=17600 T_days=30.0 W=10.0 head_epochs=40 seed=0
+selected_events=485992 pos=180838 test_events=95705 test_pos=34683
+
+f0.5: 0.6428532597205695
+f1: 0.6881439084219133
+pr_auc: 0.6697804515145954
+roc_auc: 0.8204826037704377
+f0.5_threshold: 0.9092183709144592
+f1_threshold: 0.8231706023216248
+n: 95705
+n_pos: 34683
+pos_rate: 0.36239486932754517
