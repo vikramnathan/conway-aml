@@ -119,6 +119,9 @@ from event-level flags via a transitive closure.
   headline), the symmetric mean over ground-truth groups (**recall penalty**, which
   exposes missed cases), and their combination. Lower is better.
 
+  Note that this is a fairly heuristic way to group colluding nodes together. Future
+  work should look at better ways to group and also evaluate groupings.
+
 **Results.** Each model is thresholded at its **own** F1-optimal per-event cutoff
 (balancing precision and recall) — these are **intentionally different** (0.785 vs
 0.823). We treat the two as independent detectors, each deployed at its own best
