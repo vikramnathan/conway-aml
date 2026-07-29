@@ -11,8 +11,7 @@ transaction dataset. Three deliverables:
 3. **Clustering** — guilty events are merged into "cases" (connected components)
    and scored against ground-truth cases.
 
-Findings and the results table are in [`REPORT.md`](REPORT.md) and
-[`RESULTS_SUMMARY.md`](RESULTS_SUMMARY.md).
+Findings and the results table are in [`REPORT.md`](REPORT.md).
 
 ## Prerequisites
 
