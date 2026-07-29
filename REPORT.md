@@ -62,15 +62,41 @@ These target classic laundering typologies (fan-in/out, smurfing, gather-scatter
 pass-through, cycles). Heavy-tailed columns (degrees, amounts, counts) are `log1p`-ed;
 all features are standard-scaled using **train-split statistics only**.
 
-## (c) Clustering method
+## (c) Results — baseline vs. +graph (per-event)
+
+All numbers on the 95,705 held-out test events. We report **F2 as the primary
+metric**: in AML a missed launderer is far costlier than a false alarm, so the
+operating point should prioritise recall. (The PRAGMA paper reports F0.5, which
+emphasises precision; we deliberately depart from that because the operational
+objective here is catching fraud.) F1 / F0.5 are shown for reference; PR-AUC and
+ROC-AUC are threshold-independent.
+
+| Metric | PRAGMA-only | PRAGMA + graph | Δ |
+|---|---|---|---|
+| **F2** (primary) | 0.794 | **0.818** | +3% |
+| F1 | 0.621 | **0.688** | +11% |
+| F0.5 | 0.530 | **0.643** | +21% |
+| PR-AUC | 0.519 | **0.670** | +29% |
+| ROC-AUC | 0.709 | **0.821** | +16% |
+
+Graph topology features lift every metric — a direct confirmation of the paper's
+§3.4.5 limitation: the relational signal PRAGMA cannot see in isolation is exactly
+what AML detection needs. The gap is largest on the precision-sensitive metrics
+(F0.5, PR-AUC): both models can be pushed to high recall, but the graph features
+sharply reduce the false-positive cost of doing so.
+
+## (d) Case clustering — method and results
 
 Detection at the event level is only part of AML — investigators care about **cases**:
 the group of accounts collaborating in one laundering episode. We reconstruct cases
 from event-level flags via a transitive closure.
 
+**Method.**
+
 - **Guilty events.** Predicted-guilty = model score >= threshold (each model's
-  F2-optimal threshold, recall-leaning); ground-truth-guilty = actual label == 1.
-  Predicted and ground-truth groups are built independently by the same procedure.
+  F1-optimal threshold, balancing precision and recall); ground-truth-guilty =
+  actual label == 1. Predicted and ground-truth groups are built independently by
+  the same procedure.
 - **Merge relation.** A guilty event `(n, t)` (node `n`, time `t`) links to a guilty
   event `(m, t')` when `m` is the counterparty of `n`'s guilty transaction **and**
   `|t - t'| < T`. Vertices are individual guilty *events*.
@@ -93,71 +119,43 @@ from event-level flags via a transitive closure.
   headline), the symmetric mean over ground-truth groups (**recall penalty**, which
   exposes missed cases), and their combination. Lower is better.
 
-## (d) Results
-
-All numbers on the 95,705 held-out test events (per-event) / their induced groups.
-
-### Per-event classification (steps 1 & 2)
-
-We report **F2 as the primary metric**: in AML a missed launderer is far costlier
-than a false alarm, so the operating point should prioritise recall. (The PRAGMA
-paper reports F0.5, which emphasises precision; we deliberately depart from that
-because the operational objective here is catching fraud.) F1 / F0.5 shown for
-reference; PR-AUC and ROC-AUC are threshold-independent.
-
-| Metric | PRAGMA-only | PRAGMA + graph | Δ |
-|---|---|---|---|
-| **F2** (primary) | 0.794 | **0.818** | +3% |
-| F1 | 0.621 | **0.688** | +11% |
-| F0.5 | 0.530 | **0.643** | +21% |
-| PR-AUC | 0.519 | **0.670** | +29% |
-| ROC-AUC | 0.709 | **0.821** | +16% |
-
-Graph topology features lift every metric — a direct confirmation of the paper's
-§3.4.5 limitation: the relational signal PRAGMA cannot see in isolation is exactly
-what AML detection needs. The gap is largest on the precision-sensitive metrics
-(F0.5, PR-AUC): both models can be pushed to high recall, but the graph features
-sharply reduce the false-positive cost of doing so.
-
-### Guilty-group clustering (step 3)
-
-Each model is thresholded at its **own** F2-optimal per-event cutoff (recall-leaning,
-matching the fraud-catching objective) — these are **intentionally different**
-(0.639 vs 0.569). We treat the two as independent detectors, each deployed at its own
-best operating point, which is how they would run in practice; we do not force a
-shared threshold.
+**Results.** Each model is thresholded at its **own** F1-optimal per-event cutoff
+(balancing precision and recall) — these are **intentionally different** (0.785 vs
+0.823). We treat the two as independent detectors, each deployed at its own best
+operating point, which is how they would run in practice; we do not force a shared
+threshold.
 
 | | PRAGMA-only | PRAGMA + graph |
 |---|---|---|
-| flag threshold (F2-optimal, per model) | 0.639 | 0.569 |
-| recall penalty (per GT group) ↓ | 0.024 | 0.043 |
-| precision penalty (per predicted group) ↓ | 0.645 | **0.603** |
-| combined ↓ | 0.483 | **0.440** |
-| predicted groups | 64,935 | 55,853 |
+| flag threshold (F1-optimal, per model) | 0.785 | 0.823 |
+| recall penalty (per GT group) ↓ | **0.084** | 0.168 |
+| precision penalty (per predicted group) ↓ | 0.627 | **0.534** |
+| combined ↓ | 0.475 | **0.407** |
+| predicted groups | 58,807 | 43,122 |
 | ground-truth groups | 22,918 | 22,918 |
-| predicted matched | 24,615 | 23,100 |
-| GT matched | 22,511 | 22,297 |
+| predicted matched | 24,015 | 22,183 |
+| GT matched | 21,042 | 19,224 |
 
-At F2 both models recover almost every ground-truth group (recall penalty 0.02–0.04:
-22.3–22.5K of 22,918 GT groups matched), as intended — recall is the priority. The
-difference is in precision: the +graph model reaches that recall with fewer spurious
-cases (55.9K vs 64.9K predicted groups; precision penalty 0.603 vs 0.645), so its
-combined penalty is lower (0.440 vs 0.483). Graph features let you keep recall high
-without drowning investigators in false cases.
+At the F1 operating point the +graph model gives markedly cleaner cases (precision
+penalty 0.534 vs 0.627) while still recovering most ground-truth groups (recall
+penalty 0.168; 19.2K of 22,918 matched). It reaches this with far fewer spurious
+cases (43.1K vs 58.8K predicted groups), so its combined penalty is clearly lower
+(0.407 vs 0.475). PRAGMA-only edges out on raw recall penalty (0.084) only because it
+over-flags — at the cost of ~16K more predicted groups and worse precision.
 
-### Takeaways
+## Takeaways
 
 - PRAGMA embeddings transfer to AML as a genuinely useful representation
   (ROC-AUC 0.71 from a frozen linear probe, no leakage).
 - **Graph-topology features are the decisive ingredient**: +3–29% across per-event
-  metrics (largest on precision-sensitive ones) and, at matched high recall, cleaner
-  case clusters — consistent with the paper's finding that network/relational signal
-  is PRAGMA's missing piece.
+  metrics (largest on precision-sensitive ones) and, at the F1 operating point,
+  cleaner case clusters (combined penalty 0.407 vs 0.475) — consistent with the
+  paper's finding that network/relational signal is PRAGMA's missing piece.
 
-### Caveats
+## Caveats
 
 - PRAGMA-S at 17,600 MLM steps (not fully converged; not scaled to M/L).
-- Each model is clustered at its own F2-optimal threshold (0.639 vs 0.569) — by
+- Each model is clustered at its own F1-optimal threshold (0.785 vs 0.823) — by
   design, since we compare two detectors each at its own best operating point. They
   therefore sit at different precision/recall points; the threshold-independent
   per-event metrics (PR-AUC, ROC-AUC) carry the unambiguous quality comparison.

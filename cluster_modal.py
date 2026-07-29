@@ -36,7 +36,7 @@ def cluster_eval(
     scores_csv: str = "results/per_event_scores.csv",
     model: str = "graph",            # "graph" | "pragma"
     threshold: float | None = None,   # None -> {criterion}-optimal threshold from results file
-    criterion: str = "f2",           # which F-beta threshold to operate at: f2 | f1 | f0.5
+    criterion: str = "f1",           # which F-beta threshold to operate at: f1 | f2 | f0.5
     t_days: float = 30.0,             # T for the merge relation (match the label window)
 ):
     import csv
@@ -55,8 +55,8 @@ def cluster_eval(
     print(f"[scores] {len(rows)} test rows; column={score_col}")
 
     # Compute the operating threshold directly from these scores (self-contained;
-    # independent of any stale results file). Default criterion = F2 (recall-leaning:
-    # for fraud we prefer catching launderers over avoiding false alarms).
+    # independent of any stale results file). Default criterion = F1 (balances
+    # precision and recall); use f2 for a recall-leaning fraud-catching operating point.
     if threshold is None:
         beta = {"f2": 2.0, "f1": 1.0, "f0.5": 0.5}[criterion]
         s = np.array([float(r[score_col]) for r in rows])

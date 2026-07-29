@@ -115,15 +115,15 @@ modal run matched_modal.py --sample
 ## Step 5 — guilty-group clustering (step 3 of the study)
 
 ```bash
-modal run cluster_modal.py --model graph  --criterion f2 --t-days 30
-modal run cluster_modal.py --model pragma --criterion f2 --t-days 30
+modal run cluster_modal.py --model graph  --criterion f1 --t-days 30
+modal run cluster_modal.py --model pragma --criterion f1 --t-days 30
 # writes /vol/results/cluster_results_{graph,pragma}.txt
 ```
 
-Flags events at each model's F2-optimal threshold (computed from the per-event
-scores; recall-leaning, since catching fraud matters more than avoiding false
-alarms). `--criterion f1|f0.5` switches the objective; `--threshold` overrides it
-outright. `--t-days` is the merge window T.
+Flags events at each model's F1-optimal threshold (computed from the per-event
+scores; balances precision and recall). `--criterion f2|f0.5` switches the objective
+(f2 = recall-leaning for a fraud-catching operating point); `--threshold` overrides
+it outright. `--t-days` is the merge window T.
 
 ## Step 6 — pull results locally
 
@@ -144,7 +144,7 @@ done
 | `--w` | matched | positive-class loss weight (default 10) |
 | `--head-epochs` | matched | linear-probe epochs on cached embeddings |
 | `--model graph\|pragma` | cluster | which score column to cluster |
-| `--criterion f2\|f1\|f0.5` | cluster | F-beta objective for the flag threshold (default f2) |
+| `--criterion f1\|f2\|f0.5` | cluster | F-beta objective for the flag threshold (default f1) |
 | `--threshold` | cluster | override the flag threshold outright |
 
 Determinism: the account split (seed 0), tokenizer fit, and graph event selection
