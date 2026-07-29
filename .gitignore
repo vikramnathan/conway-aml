@@ -22,9 +22,6 @@ __pycache__/
 .DS_Store
 *.swp
 
-# ---- unrelated local utility (not part of this project) ----
-clean-downloads.sh
-
 # NOTE: results summaries are plain text and intentionally tracked:
 #   baseline_results.txt, graph_results.txt, cluster_results_*.txt
 # Reports (REPORT.md, README.md, RESULTS_SUMMARY.md) are tracked too.
