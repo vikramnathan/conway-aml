@@ -1,9 +1,0 @@
-Guilty-group clustering eval (model=graph, T=30.0d, threshold=0.9092)
-
-precision_penalty: 0.4638946534565091
-recall_penalty: 0.3906564302846701
-combined_penalty: 0.43088891942079494
-n_pred_groups: 27936
-n_gt_groups: 22918
-n_pred_matched: 16747
-n_gt_matched: 14066

@@ -10,6 +10,9 @@
 *.ckpt
 checkpoints/
 
+# ---- Result summaries (kept locally, not tracked in the remote) ----
+*.txt
+
 # ---- Python env & caches ----
 .venv/
 venv/
@@ -22,6 +25,6 @@ __pycache__/
 .DS_Store
 *.swp
 
-# NOTE: results summaries are plain text and intentionally tracked:
-#   baseline_results.txt, graph_results.txt, cluster_results_*.txt
-# Reports (REPORT.md, README.md, RESULTS_SUMMARY.md) are tracked too.
+# NOTE: .txt result summaries (baseline_results.txt, graph_results.txt,
+# cluster_results_*.txt) are kept locally but NOT tracked. The findings live in
+# the tracked reports: REPORT.md, README.md, RESULTS_SUMMARY.md.
